@@ -1,0 +1,101 @@
+---
+- hosts: linuxdesktop
+  remote_user: root
+  become: True
+  vars_prompt:
+    - name: "user_domain_admin"
+      prompt: "Domain admin user name"
+      private: no
+    - name: "admin_domain_password"
+      prompt: "Password for administrator"
+      private: yes
+    - name: "domain_name"
+      prompt: "Domain name"
+      private: no
+    - name: "nameserver_ip"
+      prompt: "Nameserver ip"
+      private: no
+  tasks:
+    - hostname:
+        name: mylinux-desktop
+
+    - name: Upgrade all packages to the latest version
+      apt:
+        name: "*"
+        state: latest
+
+    - name: Install pkgs
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - realmd
+        - sssd
+        - sssd-tools
+        - samba-common
+        - krb5-user
+        - packagekit
+        - samba-common-bin
+        - samba-libs
+        - adcli
+        - ntp
+        - resolvconf
+        - net-tools
+        - zsh
+        - curl
+        - wget
+        - htop
+        - vim
+
+    - name: Configure /etc/resolvconf/resolv.conf.d/head
+      lineinfile:
+        path: /etc/resolvconf/resolv.conf.d/head
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - nameserver {{ nameserver_ip }}
+        - domain {{ domain_name|lower }}
+
+    - name: Remove file (delete file)
+      file:
+        path: /etc/resolv.conf
+        state: absent
+
+    - name: Temp configure /etc/resolv.conf
+      lineinfile:
+        path: /etc/resolv.conf
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - nameserver {{ nameserver_ip }}
+        - domain {{ domain_name|lower }}
+
+    - name: Copy realmd.conf
+      copy:
+        src: ./realmd.conf
+        dest: /etc/realmd.conf
+        force: yes
+
+    - name: Join to domain
+      expect:
+        command: realm join {{ domain_name|lower  }} -U '{{ user_domain_admin }}@{{ domain_name|upper }}'
+        responses:
+          Senha para *: "{{ admin_domain_password }}"
+
+    - name: Start Kerberus kinit
+      expect:
+        command: kinit {{ user_domain_admin }}@{{ domain_name|upper }}
+        responses:
+          Password for *: "{{ admin_domain_password }}"
+
+    - name: Configure /etc/pam.d/common-session
+      lineinfile:
+        path: /etc/pam.d/common-session
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - session required pam_unix.so
+        - session optional pam_winbind.so
+        - session optional pam_sss.so
+        - session optional pam_systemd.so
+        - session required pam_mkhomedir.so skel=/etc/skel/ umask=0077
