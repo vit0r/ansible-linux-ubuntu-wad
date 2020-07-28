@@ -4,14 +4,14 @@
 2. Create ssh key for root user
 
     ```bash
-    ssh-keygen -t rsa -b 4096 -C "you@yourdomain.email" -f /root/.ssh/id_rsa
+    ssh-keygen -o -a 100 -t ed25519 -C "you@yourdomain.email" -f /root/.ssh/id_ed25519
     ```
 
-3. Copy te id_rsa.pub content for remote user root on remote machine like
+3. Copy te id_ed25519.pub content for remote user root on remote machine like
 
     ```bash
     # local
-    scp /root/.ssh/id_rsa.pub administrador@ip:/tmp/authorized_keys
+    scp /root/.ssh/id_ed25519.pub administrador@ip:/tmp/authorized_keys
     # remote
     cp /tmp/authorized_keys /root/.ssh/authorized_keys
     ```
