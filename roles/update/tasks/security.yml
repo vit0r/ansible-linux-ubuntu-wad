@@ -1,0 +1,6 @@
+- name: update servers
+  package:
+    name: "*"
+    state: latest
+    update_cache: yes
+    autoclean: yes

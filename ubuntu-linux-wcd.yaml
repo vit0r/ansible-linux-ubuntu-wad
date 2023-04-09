@@ -1,0 +1,23 @@
+- hosts: linux-ingress-ad
+  become: yes
+  remote_user: root
+  become_user: root
+  vars_prompt:
+    - name: "ad_user"
+      prompt: "Domain admin user name"
+      private: no
+    - name: "ad_user_password"
+      prompt: "Password for ad_user"
+      private: yes
+    - name: "ad_domain"
+      prompt: "domain name fqdn for example: mydomain.net.local"
+      private: no
+    - name: "ad_server_ip"
+      prompt: "ad server ip address"
+      private: no
+    - name: "ad_server_name"
+      prompt: "ad hostname"
+      private: no
+  roles:
+    - { role: update }
+    - { role: ingressad }
